@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AI Resume Generator</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <!-- You can also include Mammoth.js if needed for DOCX preview, but it's not used in this integration -->
+</head>
+<body>
+  <div class="container">
+    <!-- Input Form Section -->
+    <div class="input-section">
+      <h2>Enter Your Details</h2>
+      <form id="resume-form" action="/" method="POST">
+        <!-- Personal Information -->
+        <h3>Personal Information</h3>
+        <label for="name">Name:</label>
+        <input type="text" id="name" name="name" placeholder="Enter your name" />
+
+        <label for="address">Address:</label>
+        <input type="text" id="address" name="address" placeholder="Enter your address" />
+
+        <label for="number">Phone Number:</label>
+        <input type="text" id="number" name="number" placeholder="Enter your phone number" />
+
+        <label for="email">Email:</label>
+        <input type="email" id="email" name="email" placeholder="Enter your email" />
+
+        <label for="linkedin">LinkedIn:</label>
+        <input type="text" id="linkedin" name="linkedin" placeholder="Enter your LinkedIn profile" />
+
+        <label for="website">Website:</label>
+        <input type="text" id="website" name="website" placeholder="Enter your website" />
+
+        <!-- About Me -->
+        <h3>About Me</h3>
+        <label for="introduction">Introduction:</label>
+        <textarea id="introduction" name="introduction" placeholder="Write a brief summary about yourself"></textarea>
+
+        <!-- Experience -->
+        <h3>Experience</h3>
+        <label for="experience1">Experience 1:</label>
+        <input type="text" id="experience1" name="experience1" placeholder="Enter first experience" />
+
+        <label for="date_experience1">Duration (Experience 1):</label>
+        <input type="text" id="date_experience1" name="date_experience1" placeholder="e.g., Jan 2020 - Dec 2021" />
+
+        <label for="detail_experience1">Details (Experience 1):</label>
+        <textarea id="detail_experience1" name="detail_experience1" placeholder="Describe your role and achievements"></textarea>
+
+        <label for="experience2">Experience 2:</label>
+        <input type="text" id="experience2" name="experience2" placeholder="Enter second experience" />
+
+        <label for="date_experience2">Duration (Experience 2):</label>
+        <input type="text" id="date_experience2" name="date_experience2" placeholder="e.g., Feb 2018 - Dec 2019" />
+
+        <label for="detail_experience2">Details (Experience 2):</label>
+        <textarea id="detail_experience2" name="detail_experience2" placeholder="Describe your role and achievements"></textarea>
+
+        <!-- Education -->
+        <h3>Education</h3>
+        <label for="education1">Education 1:</label>
+        <input type="text" id="education1" name="education1" placeholder="Enter first education qualification" />
+
+        <label for="date_education1">Graduation Year (Education 1):</label>
+        <input type="text" id="date_education1" name="date_education1" placeholder="e.g., 2021" />
+
+        <label for="detail_education1">Details (Education 1):</label>
+        <textarea id="detail_education1" name="detail_education1" placeholder="Describe your course, major or honors"></textarea>
+
+        <label for="education2">Education 2:</label>
+        <input type="text" id="education2" name="education2" placeholder="Enter second education qualification" />
+
+        <label for="date_education2">Graduation Year (Education 2):</label>
+        <input type="text" id="date_education2" name="date_education2" placeholder="e.g., 2018" />
+
+        <label for="detail_education2">Details (Education 2):</label>
+        <textarea id="detail_education2" name="detail_education2" placeholder="Describe your course, major or honors"></textarea>
+
+        <!-- Skills -->
+        <h3>Skills</h3>
+        <label for="skill1">Skill 1:</label>
+        <input type="text" id="skill1" name="skill1" placeholder="Enter a skill" />
+        <!-- AI suggestion will be shown below Skill 1 input -->
+        <div id="ai-suggestion-skill1" class="ai-suggestion"></div>
+
+        <label for="skill2">Skill 2:</label>
+        <input type="text" id="skill2" name="skill2" placeholder="Enter a skill" />
+
+        <label for="skill3">Skill 3:</label>
+        <input type="text" id="skill3" name="skill3" placeholder="Enter a skill" />
+
+        <label for="skill4">Skill 4:</label>
+        <input type="text" id="skill4" name="skill4" placeholder="Enter a skill" />
+
+        <label for="skill5">Skill 5:</label>
+        <input type="text" id="skill5" name="skill5" placeholder="Enter a skill" />
+
+        <label for="skill6">Skill 6:</label>
+        <input type="text" id="skill6" name="skill6" placeholder="Enter a skill" />
+
+        <!-- Activities -->
+        <h3>Activities</h3>
+        <label for="activities">Activities:</label>
+        <textarea id="activities" name="activities" placeholder="List your extracurriculars or other activities"></textarea>
+
+        <button type="submit">Generate Resume</button>
+      </form>
+    </div>
+
+    <!-- Live PDF Preview Section -->
+    <div class="preview-section">
+      <h2>Live PDF Preview</h2>
+      <iframe id="pdf-preview" width="100%" height="600px" style="border: none;"></iframe>
+    </div>
+  </div>
+
+  <script>
+    // Function to update the PDF preview using the /preview_pdf endpoint.
+    function updatePdfPreview() {
+      const form = document.getElementById("resume-form");
+      const formData = new FormData(form);
+      
+      fetch("/preview_pdf", {
+        method: "POST",
+        body: formData
+      })
+      .then(response => response.blob())
+      .then(blob => {
+        const url = URL.createObjectURL(blob);
+        document.getElementById("pdf-preview").src = url;
+      })
+      .catch(error => console.error("Error converting DOCX to PDF:", error));
+    }
+    
+    // Debounce function to limit update frequency.
+    function debounce(func, wait) {
+      let timeout;
+      return function(...args) {
+        clearTimeout(timeout);
+        timeout = setTimeout(() => func.apply(this, args), wait);
+      };
+    }
+    
+    // Attach event listeners to update the PDF preview as the user types.
+    document.addEventListener("DOMContentLoaded", function() {
+      const inputs = document.querySelectorAll("input, textarea");
+      inputs.forEach(input => {
+        input.addEventListener("input", debounce(updatePdfPreview, 500));
+      });
+      // Update once on page load.
+      updatePdfPreview();
+    });
+    
+    // Function to generate AI recommendations based on the skill entered.
+    async function generateSkillRecommendation() {
+      const skillValue = document.getElementById("skill1").value;
+      if (!skillValue.trim()) return;
+      
+      const response = await fetch("/generate_recommendation", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ experience: "", skills: skillValue })
+      });
+      
+      const data = await response.json();
+      document.getElementById("ai-suggestion-skill1").innerText = data.recommendation;
+    }
+    
+    // Attach event listener to the Skill 1 input on blur to trigger AI recommendation.
+    document.addEventListener("DOMContentLoaded", function() {
+      const skill1Input = document.getElementById("skill1");
+      skill1Input.addEventListener("blur", generateSkillRecommendation);
+    });
+  </script>
+</body>
+</html>
